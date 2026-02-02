@@ -4,58 +4,58 @@ import numpy as np
 import cv2
 import os
 
-# ================= STREAMLIT CONFIG =================
+# ---------------- STREAMLIT CONFIG ----------------
 st.set_page_config(
     page_title="Plant Disease Detection",
     layout="centered"
 )
 
-st.title("🌿 Plant Disease Detection System")
+st.title("🌿 Plant Disease Detection App")
 st.write("Upload a plant leaf image to detect disease and remedies")
 
-# ================= CONSTANTS =================
+# ---------------- CONSTANTS ----------------
 IMG_SIZE = 128
 MODEL_PATH = "plant_disease_model.h5"
 
-# ================= CLASS LABELS =================
+# ---------------- CLASS LABELS ----------------
 class_names = [
     "Apple___Apple_scab",
     "Apple___Black_rot",
     "Apple___Healthy"
 ]
 
-# ================= DISEASE DETAILS =================
-disease_data = {
+# ---------------- DISEASE DETAILS ----------------
+disease_details = {
     "Apple___Apple_scab": {
         "name": "Apple Scab",
         "remedies": [
-            "Spray fungicides like Mancozeb or Captan",
+            "Use fungicides like Mancozeb or Captan",
             "Remove infected leaves",
-            "Avoid overhead irrigation",
-            "Improve air circulation"
+            "Avoid overhead watering",
+            "Ensure good air circulation"
         ]
     },
     "Apple___Black_rot": {
         "name": "Apple Black Rot",
         "remedies": [
             "Prune infected branches",
-            "Apply copper fungicide",
+            "Apply copper-based fungicide",
             "Destroy infected fruits",
-            "Maintain orchard cleanliness"
+            "Maintain field sanitation"
         ]
     },
     "Apple___Healthy": {
         "name": "Healthy Leaf",
         "remedies": [
             "No disease detected",
-            "Water regularly",
+            "Maintain proper irrigation",
             "Apply balanced fertilizer",
-            "Monitor crop condition"
+            "Regular monitoring"
         ]
     }
 }
 
-# ================= LOAD MODEL (STREAMLIT SAFE) =================
+# ---------------- LOAD MODEL ----------------
 @st.cache_resource
 def load_model():
     if not os.path.exists(MODEL_PATH):
@@ -65,47 +65,47 @@ def load_model():
 model = load_model()
 
 if model is None:
-    st.error("❌ Model file not found!")
+    st.error("❌ Model file not found")
     st.info("Place **plant_disease_model.h5** in the same folder as app.py")
     st.stop()
 
-# ================= IMAGE UPLOAD =================
+# ---------------- IMAGE UPLOAD ----------------
 uploaded_file = st.file_uploader(
     "Upload Leaf Image",
     type=["jpg", "jpeg", "png"]
 )
 
-if uploaded_file is not None:
+if uploaded_file:
     # Read image
-    image_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+    img_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    image = cv2.imdecode(img_bytes, cv2.IMREAD_COLOR)
 
     if image is None:
         st.error("Invalid image file")
         st.stop()
 
-    # Preprocess
+    # Preprocess image
     image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
     image = image / 255.0
     image = np.expand_dims(image, axis=0)
 
     st.image(uploaded_file, caption="Uploaded Leaf Image", use_column_width=True)
 
-    # ================= PREDICTION =================
+    # ---------------- PREDICTION ----------------
     prediction = model.predict(image)
     class_index = int(np.argmax(prediction))
     confidence = float(np.max(prediction)) * 100
 
     predicted_class = class_names[class_index]
-    disease = disease_data[predicted_class]
+    disease = disease_details[predicted_class]
 
-    # ================= OUTPUT =================
+    # ---------------- RESULTS ----------------
     st.subheader("🦠 Disease Detected")
     st.success(disease["name"])
 
     st.subheader("📊 Confidence")
     st.write(f"{confidence:.2f}%")
 
-    st.subheader("💊 Remedies")
+    st.subheader("💊 Remedies & Prevention")
     for remedy in disease["remedies"]:
         st.write("✔️", remedy)
